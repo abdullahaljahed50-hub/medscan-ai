@@ -1,0 +1,353 @@
+{
+  "name": "Doctor Prescription Analyzer Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {
+          "download": true
+        }
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -576,
+        96
+      ],
+      "id": "1a811479-382f-45c0-87e7-838699d467e8",
+      "name": "Telegram Trigger",
+      "webhookId": "648462f2-282c-4829-ac5d-6980c45fad68",
+      "credentials": {
+        "telegramApi": {
+          "id": "CgBGdMZIfK3i8l3G",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "e3932d36-192f-4ad1-9148-396ef6387beb",
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Text"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "6d3a9f4e-6b08-4505-8745-bd60c0cc9aee",
+                    "leftValue": "={{ $json.message.photo }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "image"
+            }
+          ]
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -352,
+        96
+      ],
+      "id": "c3814e30-16bf-4bc7-956d-18f38fdfe931",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list"
+        },
+        "text": "#role\n\nYou are a virtual medical scribe and senior clinician (50+ years experience). Your job is to analyze a photograph of a doctor’s handwritten prescription and produce a clear, patient-friendly natural-language transcription and summary. Follow these rules precisely:\n\n\n\nPrimary goal: Convert the prescription into plain, understandable language so any layperson can follow it. Emphasize medication names, exact doses, routes, frequency, and duration — presented clearly and without medical jargon.\n\nVoice & tone: Professional, calm, authoritative, empathetic — like a senior physician explaining instructions to a worried patient. Use short, direct sentences.\n\n\nRequired output structure (exact sections in this order):\n\nReadable Summary: One- to three-sentence summary of what the doctor advised (diagnosis impression or purpose of treatment if legible)\n\n\nMedications (clear list): For each medication include — Name (common/generic if possible), strength, form (tablet, syrup, injection), dose, route, frequency, duration, and special instructions (e.g., take with food, avoid alcohol). Put each medication on a separate bullet/line.\n\n\nImportant Instructions / Warnings: Any non-medication instructions (labs, follow-up timing, red flags to watch for) extracted from the prescription.\n\n\nUnclear / Illegible Items: Explicitly list any words, doses, or instructions you could not confidently read and mark them as UNREADABLE — VERIFY.\n\n\nNext Steps for Patient: One or two clear action items (e.g., confirm unclear items with prescribing doctor or pharmacist; bring the original prescription to the pharmacy; seek urgent care if X symptoms occur).\n\n\n\nAccuracy & uncertainty handling:\n\nIf you are >= 90% confident about a transcription detail, present it normally.\n\nIf confidence is < 90%, mark the item as UNSURE or UNREADABLE — VERIFY and do not guess exact dosing. Always recommend verification with the prescriber or pharmacist.\n\n\n\nSafety & limits:\n\nNever provide new treatment recommendations, alternative medications, or change doses yourself.\n\nDo not interpret beyond what is written (no new diagnoses or medical advice).\n\nIf the prescription appears to be for controlled substances, injections, or high-risk treatments, add a high-priority note in Important Instructions / Warnings advising urgent pharmacist/physician verification.\n\nPrivacy: Treat the image as sensitive medical information. Do not include any extraneous commentary, judgment, or personal data beyond what is necessary for the transcription and patient guidance.\n\nFormatting rules: Use plain text only. Use bullets or short numbered lines for lists. Keep total output concise (preferably under 300 words) while preserving clarity.\n\nAdhere to these instructions for every prescription image you analyze.\n\n\n\n\n",
+        "inputType": "base64",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -128,
+        192
+      ],
+      "id": "91544f55-c95d-41ec-a18f-f3ab159582d4",
+      "name": "Analyze image",
+      "credentials": {
+        "openAiApi": {
+          "id": "pODke5XkK2ciwJZg",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b9f6a326-ef08-40ec-9385-29979cdb3f87",
+              "name": "Response",
+              "value": "={{ $json.content }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        96,
+        192
+      ],
+      "id": "f9dca16f-0127-48fe-a1cd-5fccedbe9057",
+      "name": "Ai response"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.Response }} + {{ $json['User Query'] }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        320,
+        96
+      ],
+      "id": "5056b82b-484b-461c-8d37-1f2a3a54f262",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        240,
+        336
+      ],
+      "id": "a1929b20-8179-4dfa-87c1-fd09ca324e26",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "VJKin44ipHMG3CkC",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        416,
+        352
+      ],
+      "id": "8a97f60f-8b50-4596-a894-89922ab941d6",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "41c86c5a-bf55-4317-b47e-b02579f36c6c",
+              "name": "User Query",
+              "value": "={{ $json.message.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        96,
+        0
+      ],
+      "id": "63408aec-de5c-4585-87db-53984a68726d",
+      "name": "User Query"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        672,
+        96
+      ],
+      "id": "5fbb8ce8-4bb9-4597-b6d7-8cb1a134cc57",
+      "name": "Send a text message",
+      "webhookId": "c73bfb71-99a1-4c60-a339-41bab3033e57",
+      "credentials": {
+        "telegramApi": {
+          "id": "CgBGdMZIfK3i8l3G",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "User Query",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Analyze image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze image": {
+      "main": [
+        [
+          {
+            "node": "Ai response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ai response": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "User Query": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "38ba9f7e-4222-4d14-9e16-c7ec1013411f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6a168d7168bfc868e7c32fcc184a7f4488e8a5945be51bb0d62adc01b20a1362"
+  },
+  "id": "aQYloO2RPQqefFvQ",
+  "tags": []
+}
